@@ -18,11 +18,21 @@ class ChatGPTService:
         if self.api_key:
             try:
                 # OpenAI 클라이언트 초기화 (환경변수에서 자동으로 API 키 로드)
-                self.client = openai.OpenAI()
+                # proxies 인수 문제 해결을 위해 명시적으로 설정
+                self.client = openai.OpenAI(api_key=self.api_key)
                 print(f"ChatGPT 서비스 초기화 성공 - 클라이언트 생성됨")
             except Exception as e:
                 print(f"OpenAI 클라이언트 초기화 실패: {e}")
-                self.client = None
+                # 대안 방법 시도
+                try:
+                    import os
+
+                    os.environ["OPENAI_API_KEY"] = self.api_key
+                    self.client = openai.OpenAI()
+                    print(f"ChatGPT 서비스 초기화 성공 (대안 방법) - 클라이언트 생성됨")
+                except Exception as e2:
+                    print(f"OpenAI 클라이언트 초기화 실패 (대안 방법): {e2}")
+                    self.client = None
         else:
             print("OpenAI API 키가 설정되지 않았습니다.")
             print(f"Settings에서 가져온 API 키: {settings.OPENAI_API_KEY}")

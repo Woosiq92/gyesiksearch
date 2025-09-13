@@ -223,7 +223,6 @@ class AudioAnalyzer:
                             from pydub import AudioSegment
                             from pydub.utils import which
                             import subprocess
-                            import os
 
                             print(f"pydub로 {detected_format} 파일 처리 시도...")
 
@@ -460,8 +459,6 @@ class AudioAnalyzer:
                             return y, sr
                         finally:
                             # 임시 파일 삭제
-                            import os
-
                             if os.path.exists(temp_wav_path):
                                 os.unlink(temp_wav_path)
                     else:
