@@ -23,7 +23,7 @@ router = APIRouter()
 # 서비스 인스턴스
 audio_analyzer = AudioAnalyzer()
 spotify_service = SpotifyService()
-chatgpt_service = ChatGPTService()
+# chatgpt_service = ChatGPTService()  # 임시 비활성화
 
 # 분석 결과 저장소 (메모리 기반)
 analysis_sessions = {}
@@ -144,11 +144,11 @@ async def analyze_audio(
                 time_signature=4,  # 기본값
             )
 
-            # ChatGPT 분석
-            analysis_reason = None
-            if chatgpt_service.api_key:
-                features_dict = audio_features.dict()
-                analysis_reason = chatgpt_service.analyze_audio_features(features_dict)
+            # ChatGPT 분석 (임시 비활성화)
+            analysis_reason = "오디오 특징 분석 완료"
+            # if chatgpt_service.api_key:
+            #     features_dict = audio_features.dict()
+            #     analysis_reason = chatgpt_service.analyze_audio_features(features_dict)
 
             # 곡 식별 (현재는 기본값 반환)
             track_info = None
@@ -239,12 +239,12 @@ async def analyze_spotify_track(track_id: str = Form(...)):
             time_signature=audio_features_data.get("time_signature"),
         )
 
-        # ChatGPT 분석
-        analysis_reason = None
-        if chatgpt_service.api_key:
-            analysis_reason = chatgpt_service.analyze_audio_features(
-                audio_features_data, track_info
-            )
+        # ChatGPT 분석 (임시 비활성화)
+        analysis_reason = "Spotify 트랙 분석 완료"
+        # if chatgpt_service.api_key:
+        #     analysis_reason = chatgpt_service.analyze_audio_features(
+        #         audio_features_data, track_info
+        #     )
 
         # 트랙 정보 변환
         track_info_response = TrackInfo(
