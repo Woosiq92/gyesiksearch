@@ -45,7 +45,6 @@ class Settings(BaseSettings):
     ]
 
     class Config:
-        env_file = ".env"
         case_sensitive = True
         extra = "ignore"  # 추가 필드 허용
 
@@ -53,12 +52,24 @@ class Settings(BaseSettings):
 # 전역 설정 인스턴스
 settings = Settings()
 
-# 환경 변수에서 설정 로드
-if os.path.exists(".env"):
-    try:
-        settings = Settings(_env_file=".env")
-    except Exception:
-        # .env 파일에 문제가 있으면 기본 설정 사용
-        settings = Settings()
+# 환경 변수에서 설정 로드 (Railway 전용)
+print("Loading settings from environment variables")
+settings = Settings()
+
+# OpenAI API 키 확인 및 디버깅
+if settings.OPENAI_API_KEY:
+    print(f"✅ OpenAI API key loaded successfully (length: {len(settings.OPENAI_API_KEY)})")
+    print(f"API key starts with: {settings.OPENAI_API_KEY[:10]}...")
 else:
-    settings = Settings()
+    print("❌ OpenAI API key not found in environment variables")
+    # 환경변수 직접 확인
+    env_key = os.getenv("OPENAI_API_KEY")
+    if env_key:
+        print(f"✅ Found OPENAI_API_KEY in os.getenv (length: {len(env_key)})")
+        settings.OPENAI_API_KEY = env_key
+    else:
+        print("❌ OPENAI_API_KEY not found in os.getenv either")
+        print("Available environment variables:")
+        for key in os.environ.keys():
+            if 'OPENAI' in key or 'SPOTIFY' in key:
+                print(f"  {key}: {'*' * 10}...")

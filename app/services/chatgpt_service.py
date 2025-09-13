@@ -10,16 +10,22 @@ class ChatGPTService:
         self.api_key = settings.OPENAI_API_KEY
         self.client = None
 
+        print(f"ChatGPT 서비스 초기화 시작 - API 키 존재: {self.api_key is not None}")
+        if self.api_key:
+            print(f"API 키 길이: {len(self.api_key)}")
+            print(f"API 키 시작 부분: {self.api_key[:10]}...")
+
         if self.api_key:
             try:
                 # OpenAI 클라이언트 초기화 (환경변수에서 자동으로 API 키 로드)
                 self.client = openai.OpenAI()
-                print(f"ChatGPT 서비스 초기화 성공 - API 키 길이: {len(self.api_key)}")
+                print(f"ChatGPT 서비스 초기화 성공 - 클라이언트 생성됨")
             except Exception as e:
                 print(f"OpenAI 클라이언트 초기화 실패: {e}")
                 self.client = None
         else:
             print("OpenAI API 키가 설정되지 않았습니다.")
+            print(f"Settings에서 가져온 API 키: {settings.OPENAI_API_KEY}")
 
     def analyze_audio_features(
         self,
