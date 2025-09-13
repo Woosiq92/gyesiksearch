@@ -146,17 +146,22 @@ async def analyze_audio(
 
             # ChatGPT 분석
             analysis_reason = None
+            print(f"ChatGPT 서비스 상태 확인 - 클라이언트: {chatgpt_service.client is not None}, API 키: {chatgpt_service.api_key is not None}")
+            
             if chatgpt_service.client and chatgpt_service.api_key:
                 try:
                     features_dict = audio_features.dict()
+                    print(f"ChatGPT 분석 요청 - 특징: {features_dict}")
                     analysis_reason = chatgpt_service.analyze_audio_features(
                         features_dict
                     )
+                    print(f"ChatGPT 분석 완료 - 결과: {analysis_reason}")
                 except Exception as e:
                     print(f"ChatGPT 분석 실패: {e}")
-                    analysis_reason = "오디오 특징 분석 완료"
+                    analysis_reason = f"오디오 특징 분석 완료 (AI 분석 실패: {str(e)})"
             else:
-                analysis_reason = "오디오 특징 분석 완료"
+                print("ChatGPT 서비스가 사용할 수 없습니다.")
+                analysis_reason = "오디오 특징 분석 완료 (AI 분석 서비스 사용 불가)"
 
             # 곡 식별 (현재는 기본값 반환)
             track_info = None

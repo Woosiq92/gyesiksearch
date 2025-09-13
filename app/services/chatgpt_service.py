@@ -14,9 +14,12 @@ class ChatGPTService:
             try:
                 # OpenAI 클라이언트 초기화 (환경변수에서 자동으로 API 키 로드)
                 self.client = openai.OpenAI()
+                print(f"ChatGPT 서비스 초기화 성공 - API 키 길이: {len(self.api_key)}")
             except Exception as e:
                 print(f"OpenAI 클라이언트 초기화 실패: {e}")
                 self.client = None
+        else:
+            print("OpenAI API 키가 설정되지 않았습니다.")
 
     def analyze_audio_features(
         self,
@@ -34,11 +37,14 @@ class ChatGPTService:
             분석 결과 텍스트
         """
         if not self.client:
+            print("ChatGPT 클라이언트가 초기화되지 않았습니다.")
             return "ChatGPT API 설정이 필요합니다."
 
         try:
+            print(f"ChatGPT 분석 시작 - 오디오 특징: {audio_features}")
             # 프롬프트 생성
             prompt = self._create_analysis_prompt(audio_features, track_info)
+            print(f"생성된 프롬프트: {prompt}")
 
             response = self.client.chat.completions.create(
                 model="gpt-4o-mini",  # 더 강력하고 빠른 모델
@@ -53,9 +59,12 @@ class ChatGPTService:
                 temperature=0.7,
             )
 
-            return response.choices[0].message.content.strip()
+            result = response.choices[0].message.content.strip()
+            print(f"ChatGPT 분석 결과: {result}")
+            return result
 
         except Exception as e:
+            print(f"ChatGPT 분석 중 오류 발생: {str(e)}")
             return f"음악 분석 중 오류가 발생했습니다: {str(e)}"
 
     def generate_recommendation_reason(
