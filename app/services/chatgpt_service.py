@@ -8,10 +8,15 @@ class ChatGPTService:
 
     def __init__(self):
         self.api_key = settings.OPENAI_API_KEY
+        self.client = None
+        
         if self.api_key:
-            self.client = openai.OpenAI(api_key=self.api_key)
-        else:
-            self.client = None
+            try:
+                # OpenAI 클라이언트 초기화 (환경변수에서 자동으로 API 키 로드)
+                self.client = openai.OpenAI()
+            except Exception as e:
+                print(f"OpenAI 클라이언트 초기화 실패: {e}")
+                self.client = None
 
     def analyze_audio_features(
         self,
