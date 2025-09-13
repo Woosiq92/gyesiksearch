@@ -30,12 +30,6 @@ function RecommendationsPage() {
   const [error, setError] = useState(null);
   const [numRecommendations] = useState(5); // 5개 고정
 
-  useEffect(() => {
-    if (analysisResult) {
-      getRecommendations();
-    }
-  }, [analysisResult, getRecommendations]);
-
   const getRecommendations = useCallback(async () => {
     if (!analysisResult) return;
     
@@ -67,6 +61,12 @@ function RecommendationsPage() {
       setIsLoading(false);
     }
   }, [analysisResult, numRecommendations]);
+
+  useEffect(() => {
+    if (analysisResult) {
+      getRecommendations();
+    }
+  }, [analysisResult, getRecommendations]);
 
   const handlePlayPreview = (url) => {
     if (url) {
