@@ -4,6 +4,19 @@ from typing import Dict, Any, Optional, Tuple
 import tempfile
 import os
 from pathlib import Path
+import warnings
+
+# scipy 호환성 문제 해결
+try:
+    from scipy.signal import windows
+
+    # scipy.signal.hann이 없는 경우 windows.hann 사용
+    if not hasattr(windows, "hann"):
+        import scipy.signal as signal
+
+        windows.hann = signal.hann
+except ImportError:
+    pass
 
 
 class AudioAnalyzer:
@@ -175,11 +188,13 @@ class AudioAnalyzer:
             detected_format = self._detect_audio_format(audio_file_path)
             print(f"감지된 파일 형식: {detected_format}")
 
-            # 방법 1: librosa 기본 로딩 (경고 억제)
+            # 방법 1: librosa 기본 로딩 (경고 억제 및 scipy 호환성 처리)
             import warnings
 
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
+                # scipy 호환성 문제 해결을 위한 환경변수 설정
+                os.environ["LIBROSA_CACHE_DIR"] = "/tmp/librosa_cache"
                 y, sr = librosa.load(
                     audio_file_path, sr=self.sample_rate, duration=30, mono=True
                 )
