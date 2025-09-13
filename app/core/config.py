@@ -58,7 +58,9 @@ settings = Settings()
 
 # OpenAI API 키 확인 및 디버깅
 if settings.OPENAI_API_KEY:
-    print(f"✅ OpenAI API key loaded successfully (length: {len(settings.OPENAI_API_KEY)})")
+    print(
+        f"✅ OpenAI API key loaded successfully (length: {len(settings.OPENAI_API_KEY)})"
+    )
     print(f"API key starts with: {settings.OPENAI_API_KEY[:10]}...")
 else:
     print("❌ OpenAI API key not found in environment variables")
@@ -71,5 +73,5 @@ else:
         print("❌ OPENAI_API_KEY not found in os.getenv either")
         print("Available environment variables:")
         for key in os.environ.keys():
-            if 'OPENAI' in key or 'SPOTIFY' in key:
+            if "OPENAI" in key or "SPOTIFY" in key:
                 print(f"  {key}: {'*' * 10}...")
