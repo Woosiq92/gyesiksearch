@@ -1,4 +1,4 @@
-# MusicMatch 배포 가이드
+# DJ계티Match 배포 가이드
 
 ## 🚀 Railway 배포 (추천)
 

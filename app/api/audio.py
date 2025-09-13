@@ -149,7 +149,9 @@ async def analyze_audio(
             if chatgpt_service.client and chatgpt_service.api_key:
                 try:
                     features_dict = audio_features.dict()
-                    analysis_reason = chatgpt_service.analyze_audio_features(features_dict)
+                    analysis_reason = chatgpt_service.analyze_audio_features(
+                        features_dict
+                    )
                 except Exception as e:
                     print(f"ChatGPT 분석 실패: {e}")
                     analysis_reason = "오디오 특징 분석 완료"

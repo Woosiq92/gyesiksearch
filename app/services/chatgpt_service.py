@@ -9,7 +9,7 @@ class ChatGPTService:
     def __init__(self):
         self.api_key = settings.OPENAI_API_KEY
         self.client = None
-        
+
         if self.api_key:
             try:
                 # OpenAI 클라이언트 초기화 (환경변수에서 자동으로 API 키 로드)

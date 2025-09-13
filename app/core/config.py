@@ -6,7 +6,7 @@ import os
 class Settings(BaseSettings):
     # API 설정
     API_V1_STR: str = "/api/v1"
-    PROJECT_NAME: str = "MusicMatch"
+    PROJECT_NAME: str = "DJ계티Match"
 
     # 데이터베이스 설정 (현재 사용하지 않음)
     # DATABASE_URL: str = "postgresql://user:password@localhost/musicmatch"
