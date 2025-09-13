@@ -43,7 +43,7 @@ function RecommendationsPage() {
     setError(null);
     
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'web-production-7c90a.up.railway.app'}/api/v1/recommendations/similar`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://web-production-7c90a.up.railway.app'}/api/v1/recommendations/similar`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
