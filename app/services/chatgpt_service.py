@@ -17,22 +17,18 @@ class ChatGPTService:
 
         if self.api_key:
             try:
-                # OpenAI 클라이언트 초기화 (환경변수에서 자동으로 API 키 로드)
-                # proxies 인수 문제 해결을 위해 명시적으로 설정
-                self.client = openai.OpenAI(api_key=self.api_key)
+                # 환경변수에 API 키 설정 후 클라이언트 초기화
+                import os
+                os.environ["OPENAI_API_KEY"] = self.api_key
+                
+                # 간단한 클라이언트 초기화 (proxies 인수 문제 회피)
+                self.client = openai.OpenAI()
                 print(f"ChatGPT 서비스 초기화 성공 - 클라이언트 생성됨")
             except Exception as e:
                 print(f"OpenAI 클라이언트 초기화 실패: {e}")
-                # 대안 방법 시도
-                try:
-                    import os
-
-                    os.environ["OPENAI_API_KEY"] = self.api_key
-                    self.client = openai.OpenAI()
-                    print(f"ChatGPT 서비스 초기화 성공 (대안 방법) - 클라이언트 생성됨")
-                except Exception as e2:
-                    print(f"OpenAI 클라이언트 초기화 실패 (대안 방법): {e2}")
-                    self.client = None
+                # 최종 대안: 직접 API 호출 방식 사용
+                self.client = None
+                print("ChatGPT 서비스는 직접 API 호출 방식으로 작동합니다.")
         else:
             print("OpenAI API 키가 설정되지 않았습니다.")
             print(f"Settings에서 가져온 API 키: {settings.OPENAI_API_KEY}")
@@ -52,8 +48,8 @@ class ChatGPTService:
         Returns:
             분석 결과 텍스트
         """
-        if not self.client:
-            print("ChatGPT 클라이언트가 초기화되지 않았습니다.")
+        if not self.client and not self.api_key:
+            print("ChatGPT 클라이언트와 API 키가 모두 없습니다.")
             return "ChatGPT API 설정이 필요합니다."
 
         try:
@@ -62,20 +58,48 @@ class ChatGPTService:
             prompt = self._create_analysis_prompt(audio_features, track_info)
             print(f"생성된 프롬프트: {prompt}")
 
-            response = self.client.chat.completions.create(
-                model="gpt-4o-mini",  # 더 강력하고 빠른 모델
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "당신은 음악 분석 전문가입니다. 간결하고 명확하게 곡의 특성을 분석해주세요. 각 항목은 한 줄로만 설명해주세요.",
-                    },
-                    {"role": "user", "content": prompt},
-                ],
-                max_tokens=200,  # 간결한 분석을 위해 토큰 감소
-                temperature=0.7,
-            )
+            # 클라이언트가 있으면 사용, 없으면 직접 API 호출
+            if self.client:
+                response = self.client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": "당신은 음악 분석 전문가입니다. 간결하고 명확하게 곡의 특성을 분석해주세요. 각 항목은 한 줄로만 설명해주세요.",
+                        },
+                        {"role": "user", "content": prompt},
+                    ],
+                    max_tokens=200,
+                    temperature=0.7,
+                )
+                result = response.choices[0].message.content.strip()
+            else:
+                # 직접 API 호출
+                import requests
+                headers = {
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json"
+                }
+                data = {
+                    "model": "gpt-4o-mini",
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": "당신은 음악 분석 전문가입니다. 간결하고 명확하게 곡의 특성을 분석해주세요. 각 항목은 한 줄로만 설명해주세요.",
+                        },
+                        {"role": "user", "content": prompt},
+                    ],
+                    "max_tokens": 200,
+                    "temperature": 0.7,
+                }
+                response = requests.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers=headers,
+                    json=data
+                )
+                response.raise_for_status()
+                result = response.json()["choices"][0]["message"]["content"].strip()
 
-            result = response.choices[0].message.content.strip()
             print(f"ChatGPT 분석 결과: {result}")
             return result
 
