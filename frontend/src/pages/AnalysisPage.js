@@ -369,7 +369,7 @@ function AnalysisPage() {
       formData.append('analysis_type', 'feature_extraction');
       formData.append('input_type', inputType);
       
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'web-production-7c90a.up.railway.app'}/api/v1/audio/analyze`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://web-production-7c90a.up.railway.app'}/api/v1/audio/analyze`, {
         method: 'POST',
         body: formData,
       });
@@ -397,7 +397,7 @@ function AnalysisPage() {
       const formData = new FormData();
       formData.append('track_id', trackId);
       
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/v1/audio/analyze/spotify`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://web-production-7c90a.up.railway.app'}/api/v1/audio/analyze/spotify`, {
         method: 'POST',
         body: formData,
       });
