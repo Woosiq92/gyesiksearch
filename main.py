@@ -7,7 +7,7 @@ from app.api import audio, recommendations, spotify
 from app.core.config import settings
 
 app = FastAPI(
-    title="MusicMatch API",
+    title="DJ계티Match API",
     description="음악 식별 및 유사곡 추천 시스템 API",
     version="1.0.0",
     docs_url="/docs",
@@ -40,7 +40,7 @@ app.include_router(spotify.router, prefix="/api/v1/spotify", tags=["spotify"])
 
 @app.get("/")
 async def root():
-    return {"message": "MusicMatch API 서버가 실행 중입니다!"}
+    return {"message": "DJ계티Match API 서버가 실행 중입니다!"}
 
 
 @app.get("/health")

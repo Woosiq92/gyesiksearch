@@ -40,7 +40,7 @@ function HomePage() {
           fontSize: { xs: '2rem', sm: '3rem' }
         }}
       >
-        🎵 MusicMatch
+        🎵 DJ계티Match
       </Typography>
       
       <Typography 

@@ -26,7 +26,7 @@ function App() {
       <AppBar position="static" sx={{ backgroundColor: '#1db954' }}>
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            🎵 MusicMatch
+            🎵 DJ계티Match
           </Typography>
           {location.pathname !== '/' && (
             <IconButton
