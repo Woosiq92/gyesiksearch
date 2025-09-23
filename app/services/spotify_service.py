@@ -112,6 +112,16 @@ class SpotifyService:
 
         try:
             print(f"🎵 Audio Features 요청: {track_id}")
+
+            # 토큰 상태 확인 및 갱신
+            try:
+                token = self.sp.client_credentials_manager.get_access_token()
+                print(f"토큰 상태 확인: {type(token)}")
+            except Exception as token_error:
+                print(f"토큰 확인 실패: {token_error}")
+                return {}
+
+            # Audio Features 요청
             features = self.sp.audio_features(track_id)
             if features and features[0]:
                 print(f"✅ Audio Features 성공: {len(features[0])}개 특성")
@@ -122,7 +132,33 @@ class SpotifyService:
 
         except Exception as e:
             print(f"❌ Spotify 오디오 특성 가져오기 오류: {e}")
+            print(f"오류 타입: {type(e)}")
+            print(f"오류 상세: {str(e)}")
             return {}
+
+    def _get_default_audio_features(self) -> Dict[str, Any]:
+        """
+        Audio Features를 가져올 수 없는 경우 사용할 기본값
+        """
+        return {
+            "danceability": 0.5,
+            "energy": 0.5,
+            "valence": 0.5,
+            "tempo": 120.0,
+            "acousticness": 0.5,
+            "instrumentalness": 0.1,  # 가사 있는 곡으로 가정
+            "speechiness": 0.1,
+            "liveness": 0.1,
+            "loudness": -5.0,
+            "mode": 1,
+            "key": 0,
+            "time_signature": 4,
+            "duration_ms": 180000,
+            "analysis_url": "",
+            "track_href": "",
+            "type": "audio_features",
+            "uri": "",
+        }
 
     def get_recommendations(
         self,
