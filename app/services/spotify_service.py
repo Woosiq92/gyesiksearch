@@ -202,8 +202,8 @@ class SpotifyService:
         print(f"  track_features: {track_features}")
 
         if not target_features or not track_features:
-            print("  Missing features, returning default 0.5")
-            return 0.5  # 기본값
+            print("  Missing features, returning default 50%")
+            return 50.0  # 기본값을 50%로 변경
 
         # 주요 특성들 비교
         features_to_compare = ["danceability", "energy", "valence"]
