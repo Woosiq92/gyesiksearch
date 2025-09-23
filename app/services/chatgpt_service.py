@@ -19,8 +19,9 @@ class ChatGPTService:
             try:
                 # 환경변수에 API 키 설정 후 클라이언트 초기화
                 import os
+
                 os.environ["OPENAI_API_KEY"] = self.api_key
-                
+
                 # 간단한 클라이언트 초기화 (proxies 인수 문제 회피)
                 self.client = openai.OpenAI()
                 print(f"ChatGPT 서비스 초기화 성공 - 클라이언트 생성됨")
@@ -76,9 +77,10 @@ class ChatGPTService:
             else:
                 # 직접 API 호출
                 import requests
+
                 headers = {
                     "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
                 }
                 data = {
                     "model": "gpt-4o-mini",
@@ -95,7 +97,7 @@ class ChatGPTService:
                 response = requests.post(
                     "https://api.openai.com/v1/chat/completions",
                     headers=headers,
-                    json=data
+                    json=data,
                 )
                 response.raise_for_status()
                 result = response.json()["choices"][0]["message"]["content"].strip()

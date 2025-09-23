@@ -297,7 +297,7 @@ async def _get_default_recommendations(request: RecommendationRequest):
             mode=1,
             loudness=-5.0 - (i * 0.5),
             acousticness=0.3 - (i * 0.02),
-            instrumentalness=0.1,
+            instrumentalness=0.1,  # 가사 있는 곡으로 설정
             speechiness=0.05,
             liveness=0.1,
             duration_ms=180000 + (i * 3000),
@@ -364,7 +364,7 @@ async def _get_error_recommendation(request: RecommendationRequest):
             mode=1,
             loudness=-5.0,
             acousticness=0.5,
-            instrumentalness=0.5,
+            instrumentalness=0.1,  # 가사 있는 곡으로 설정
             speechiness=0.1,
             liveness=0.1,
             duration_ms=180000,

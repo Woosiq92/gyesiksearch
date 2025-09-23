@@ -132,7 +132,7 @@ class SpotifyService:
 
             # 결과를 랜덤하게 섞고 제한
             random.shuffle(unique_tracks)
-            unique_tracks = unique_tracks[:limit]
+            unique_tracks = unique_tracks[: limit * 2]  # 필터링을 위해 더 많이 가져오기
 
             recommendations = {"tracks": unique_tracks}
             print(f"검색 기반 추천 성공: {len(recommendations['tracks'])}개 트랙")
@@ -141,6 +141,29 @@ class SpotifyService:
 
             tracks = []
             for track in recommendations["tracks"]:
+                # Audio Features 가져오기 (가사 유무 확인을 위해)
+                try:
+                    audio_features = self.get_audio_features(track["id"])
+                    # instrumentalness가 0.5 이상이면 가사 없는 곡으로 판단하여 제외
+                    if (
+                        audio_features
+                        and audio_features.get("instrumentalness", 0) > 0.5
+                    ):
+                        print(
+                            f"가사 없는 곡 제외: {track['name']} (instrumentalness: {audio_features.get('instrumentalness', 0):.2f})"
+                        )
+                        continue
+                except Exception as e:
+                    print(f"Audio Features 가져오기 실패: {e}")
+                    # Audio Features를 가져올 수 없는 경우 기본값으로 설정하고 포함
+                    audio_features = {
+                        "danceability": 0.5,
+                        "energy": 0.5,
+                        "valence": 0.5,
+                        "tempo": 120.0,
+                        "instrumentalness": 0.1,  # 기본값으로 가사 있는 곡으로 가정
+                    }
+
                 track_info = {
                     "id": track["id"],
                     "name": track["name"],
@@ -152,19 +175,16 @@ class SpotifyService:
                     "preview_url": track["preview_url"],
                     "external_urls": track["external_urls"],
                     "popularity": track["popularity"],
-                }
-
-                # Audio Features는 Client Credentials Flow에서 제한됨
-                # 기본값으로 설정
-                track_info["audio_features"] = {
-                    "danceability": 0.5,
-                    "energy": 0.5,
-                    "valence": 0.5,
-                    "tempo": 120.0,
+                    "audio_features": audio_features,
                 }
 
                 tracks.append(track_info)
 
+                # 요청된 개수만큼 수집되면 중단
+                if len(tracks) >= limit:
+                    break
+
+            print(f"가사 있는 곡 {len(tracks)}개 추천 완료")
             return tracks
 
         except Exception as e:
@@ -273,14 +293,14 @@ class SpotifyService:
         try:
             # 추천 파라미터 설정
             recommendations_params = {
-                "limit": limit,
+                "limit": limit * 2,  # 필터링을 위해 더 많이 가져오기
                 "target_danceability": target_features.get("danceability", 0.5),
                 "target_energy": target_features.get("energy", 0.5),
                 "target_valence": target_features.get("valence", 0.5),
                 "target_tempo": target_features.get("tempo", 120),
                 "target_loudness": target_features.get("loudness", -5.0),
                 "target_acousticness": target_features.get("acousticness", 0.5),
-                "target_instrumentalness": target_features.get("instrumentalness", 0.5),
+                "target_instrumentalness": 0.1,  # 가사 있는 곡을 선호하도록 설정
                 "target_speechiness": target_features.get("speechiness", 0.1),
                 "target_liveness": target_features.get("liveness", 0.1),
             }
@@ -290,13 +310,36 @@ class SpotifyService:
 
             # 가장 기본적인 파라미터로 시도
             recommendations = self.sp.recommendations(
-                seed_genres=["pop"], limit=limit, market="KR"
+                seed_genres=["pop"], limit=limit * 2, market="KR"
             )
 
             print(f"Spotify SDK 추천 성공: {len(recommendations['tracks'])}개 트랙")
 
             tracks = []
             for track in recommendations["tracks"]:
+                # Audio Features 가져오기 (가사 유무 확인을 위해)
+                try:
+                    audio_features = self.get_audio_features(track["id"])
+                    # instrumentalness가 0.5 이상이면 가사 없는 곡으로 판단하여 제외
+                    if (
+                        audio_features
+                        and audio_features.get("instrumentalness", 0) > 0.5
+                    ):
+                        print(
+                            f"가사 없는 곡 제외: {track['name']} (instrumentalness: {audio_features.get('instrumentalness', 0):.2f})"
+                        )
+                        continue
+                except Exception as e:
+                    print(f"Audio Features 가져오기 실패: {e}")
+                    # Audio Features를 가져올 수 없는 경우 기본값으로 설정하고 포함
+                    audio_features = {
+                        "danceability": 0.5,
+                        "energy": 0.5,
+                        "valence": 0.5,
+                        "tempo": 120.0,
+                        "instrumentalness": 0.1,  # 기본값으로 가사 있는 곡으로 가정
+                    }
+
                 track_info = {
                     "id": track["id"],
                     "name": track["name"],
@@ -305,18 +348,16 @@ class SpotifyService:
                     "preview_url": track.get("preview_url"),
                     "external_urls": track.get("external_urls", {}),
                     "popularity": track.get("popularity", 0),
+                    "audio_features": audio_features,
                 }
-
-                # Audio Features 가져오기
-                try:
-                    audio_features = self.get_audio_features(track["id"])
-                    track_info["audio_features"] = audio_features
-                except Exception as e:
-                    print(f"Audio Features 가져오기 실패: {e}")
-                    track_info["audio_features"] = {}
 
                 tracks.append(track_info)
 
+                # 요청된 개수만큼 수집되면 중단
+                if len(tracks) >= limit:
+                    break
+
+            print(f"가사 있는 곡 {len(tracks)}개 추천 완료")
             return tracks
 
         except Exception as e:

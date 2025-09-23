@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
-app = FastAPI(title="DJ계티Match Test Server")
+app = FastAPI(title="MusicMatch Test Server")
 
 # CORS 설정
 app.add_middleware(
@@ -16,7 +16,7 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    return {"message": "DJ계티Match Test Server is running!"}
+    return {"message": "MusicMatch Test Server is running!"}
 
 
 @app.get("/health")
