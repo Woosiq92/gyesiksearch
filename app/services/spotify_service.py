@@ -197,7 +197,12 @@ class SpotifyService:
         """
         두 트랙의 오디오 특성 간 유사도 계산
         """
+        print(f"calculate_similarity called with:")
+        print(f"  target_features: {target_features}")
+        print(f"  track_features: {track_features}")
+
         if not target_features or not track_features:
+            print("  Missing features, returning default 0.5")
             return 0.5  # 기본값
 
         # 주요 특성들 비교
@@ -211,11 +216,19 @@ class SpotifyService:
                 # 유클리드 거리 기반 유사도 (0-1 범위)
                 similarity = 1 - abs(target_val - track_val)
                 similarities.append(similarity)
+                print(
+                    f"  {feature}: target={target_val:.3f}, track={track_val:.3f}, similarity={similarity:.3f}"
+                )
 
         if similarities:
-            return sum(similarities) / len(similarities)
+            avg_similarity = sum(similarities) / len(similarities)
+            # 0-1 범위를 0-100%로 변환
+            percentage = avg_similarity * 100
+            print(f"  Average similarity: {avg_similarity:.3f} ({percentage:.1f}%)")
+            return percentage
         else:
-            return 0.5  # 기본값
+            print("  No comparable features found, returning default 50%")
+            return 50.0  # 기본값을 50%로 변경
 
     def _generate_search_queries_from_features(
         self, target_features: Dict[str, Any]

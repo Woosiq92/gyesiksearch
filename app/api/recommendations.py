@@ -112,7 +112,7 @@ async def get_similar_recommendations(request: RecommendationRequest):
                             print(f"Track {i} similarity_score: {similarity_score}")
                         except Exception as e:
                             print(f"Track {i} similarity calculation error: {e}")
-                            similarity_score = 0.5
+                            similarity_score = 50.0  # 기본값을 50%로 변경
 
                         # 추천 근거 생성
                         try:
