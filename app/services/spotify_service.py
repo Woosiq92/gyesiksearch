@@ -34,7 +34,10 @@ class SpotifyService:
                 # 토큰 발급 테스트
                 try:
                     token = client_credentials_manager.get_access_token()
-                    print(f"✅ 토큰 발급 성공: {token[:20]}...")
+                    if isinstance(token, str):
+                        print(f"✅ 토큰 발급 성공: {token[:20]}...")
+                    else:
+                        print(f"✅ 토큰 발급 성공: {type(token)} 타입")
                 except Exception as token_error:
                     print(f"❌ 토큰 발급 실패: {token_error}")
                     self.sp = None
@@ -141,7 +144,10 @@ class SpotifyService:
             # 토큰 발급 테스트
             try:
                 token_response = self.sp.client_credentials_manager.get_access_token()
-                print(f"토큰 발급 성공: {str(token_response)[:20]}...")
+                if isinstance(token_response, str):
+                    print(f"토큰 발급 성공: {token_response[:20]}...")
+                else:
+                    print(f"토큰 발급 성공: {type(token_response)} 타입")
             except Exception as token_error:
                 print(f"토큰 발급 실패: {token_error}")
                 raise token_error
