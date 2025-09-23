@@ -13,14 +13,58 @@ class SpotifyService:
         self.client_id = settings.SPOTIFY_CLIENT_ID
         self.client_secret = settings.SPOTIFY_CLIENT_SECRET
 
+        print(f"Spotify API 설정 확인:")
+        print(
+            f"  Client ID: {self.client_id[:10] + '...' if self.client_id else 'None'}"
+        )
+        print(
+            f"  Client Secret: {self.client_secret[:10] + '...' if self.client_secret else 'None'}"
+        )
+
         if self.client_id and self.client_secret:
-            client_credentials_manager = SpotifyClientCredentials(
-                client_id=self.client_id, client_secret=self.client_secret
-            )
-            self.sp = spotipy.Spotify(
-                client_credentials_manager=client_credentials_manager
-            )
+            try:
+                client_credentials_manager = SpotifyClientCredentials(
+                    client_id=self.client_id, client_secret=self.client_secret
+                )
+                self.sp = spotipy.Spotify(
+                    client_credentials_manager=client_credentials_manager
+                )
+                print("✅ Spotify API 연결 성공")
+
+                # 토큰 발급 테스트
+                try:
+                    token = client_credentials_manager.get_access_token()
+                    print(f"✅ 토큰 발급 성공: {token[:20]}...")
+                except Exception as token_error:
+                    print(f"❌ 토큰 발급 실패: {token_error}")
+                    self.sp = None
+                    return
+
+                # 연결 테스트
+                test_result = self.sp.search(q="test", type="track", limit=1)
+                print(
+                    f"✅ Spotify API 테스트 성공: {len(test_result['tracks']['items'])}개 결과"
+                )
+
+                # Audio Features 테스트
+                if test_result["tracks"]["items"]:
+                    test_track_id = test_result["tracks"]["items"][0]["id"]
+                    try:
+                        test_features = self.sp.audio_features(test_track_id)
+                        if test_features and test_features[0]:
+                            print(
+                                f"✅ Audio Features 테스트 성공: {len(test_features[0])}개 특성"
+                            )
+                        else:
+                            print("❌ Audio Features 테스트 실패: 결과가 비어있음")
+                    except Exception as features_error:
+                        print(f"❌ Audio Features 테스트 실패: {features_error}")
+
+            except Exception as e:
+                print(f"❌ Spotify API 연결 실패: {e}")
+                self.sp = None
         else:
+            print("❌ Spotify API 키가 설정되지 않음")
             self.sp = None
 
     def search_track(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
@@ -60,16 +104,21 @@ class SpotifyService:
         트랙의 오디오 특성 가져오기
         """
         if not self.sp:
-            raise Exception("Spotify API 설정이 필요합니다.")
-
-        try:
-            features = self.sp.audio_features(track_id)
-            if features and features[0]:
-                return features[0]
+            print("❌ Spotify API가 설정되지 않음")
             return {}
 
+        try:
+            print(f"🎵 Audio Features 요청: {track_id}")
+            features = self.sp.audio_features(track_id)
+            if features and features[0]:
+                print(f"✅ Audio Features 성공: {len(features[0])}개 특성")
+                return features[0]
+            else:
+                print("❌ Audio Features 결과가 비어있음")
+                return {}
+
         except Exception as e:
-            print(f"Spotify 오디오 특성 가져오기 오류: {e}")
+            print(f"❌ Spotify 오디오 특성 가져오기 오류: {e}")
             return {}
 
     def get_recommendations(
@@ -195,7 +244,7 @@ class SpotifyService:
         self, target_features: Dict[str, Any], track_features: Dict[str, Any]
     ) -> float:
         """
-        두 트랙의 오디오 특성 간 유사도 계산
+        두 트랙의 오디오 특성 간 유사도 계산 (개선된 버전)
         """
         print(f"calculate_similarity called with:")
         print(f"  target_features: {target_features}")
@@ -203,82 +252,180 @@ class SpotifyService:
 
         if not target_features or not track_features:
             print("  Missing features, returning default 50%")
-            return 50.0  # 기본값을 50%로 변경
+            return 50.0
 
-        # 주요 특성들 비교
-        features_to_compare = ["danceability", "energy", "valence"]
+        # 더 많은 특성들을 비교하여 정확도 향상
+        features_to_compare = [
+            "danceability",
+            "energy",
+            "valence",
+            "tempo",
+            "acousticness",
+            "instrumentalness",
+            "speechiness",
+            "liveness",
+        ]
         similarities = []
+        weights = {
+            "danceability": 0.25,  # 가장 중요한 특성
+            "energy": 0.25,  # 가장 중요한 특성
+            "valence": 0.20,  # 감정적 유사성
+            "tempo": 0.15,  # 리듬적 유사성
+            "acousticness": 0.05,  # 음향적 특성
+            "instrumentalness": 0.05,  # 악기 vs 가사
+            "speechiness": 0.03,  # 말하기 vs 노래
+            "liveness": 0.02,  # 라이브 vs 녹음
+        }
 
         for feature in features_to_compare:
             if feature in target_features and feature in track_features:
                 target_val = target_features[feature]
                 track_val = track_features[feature]
-                # 유클리드 거리 기반 유사도 (0-1 범위)
-                similarity = 1 - abs(target_val - track_val)
-                similarities.append(similarity)
+
+                # 템포는 다른 스케일이므로 정규화
+                if feature == "tempo":
+                    # 템포 차이를 0-1 범위로 정규화 (0-200 BPM 범위 가정)
+                    tempo_diff = abs(target_val - track_val) / 200.0
+                    similarity = 1 - min(tempo_diff, 1.0)
+                else:
+                    # 다른 특성들은 0-1 범위이므로 직접 계산
+                    similarity = 1 - abs(target_val - track_val)
+
+                # 가중치 적용
+                weighted_similarity = similarity * weights.get(feature, 0.1)
+                similarities.append(weighted_similarity)
+
                 print(
-                    f"  {feature}: target={target_val:.3f}, track={track_val:.3f}, similarity={similarity:.3f}"
+                    f"  {feature}: target={target_val:.3f}, track={track_val:.3f}, "
+                    f"similarity={similarity:.3f}, weighted={weighted_similarity:.3f}"
                 )
 
         if similarities:
-            avg_similarity = sum(similarities) / len(similarities)
+            # 가중 평균 유사도 계산
+            total_weight = sum(
+                weights.get(f, 0.1)
+                for f in features_to_compare
+                if f in target_features and f in track_features
+            )
+            avg_similarity = (
+                sum(similarities) / total_weight if total_weight > 0 else 0.5
+            )
+
             # 0-1 범위를 0-100%로 변환
             percentage = avg_similarity * 100
-            print(f"  Average similarity: {avg_similarity:.3f} ({percentage:.1f}%)")
+            print(
+                f"  Weighted average similarity: {avg_similarity:.3f} ({percentage:.1f}%)"
+            )
             return percentage
         else:
             print("  No comparable features found, returning default 50%")
-            return 50.0  # 기본값을 50%로 변경
+            return 50.0
 
     def _generate_search_queries_from_features(
         self, target_features: Dict[str, Any]
     ) -> List[str]:
         """
-        분석된 오디오 특징을 기반으로 맞춤형 검색어 생성
+        분석된 오디오 특징을 기반으로 맞춤형 검색어 생성 (개선된 버전)
         """
         search_queries = []
 
         # Danceability 기반 장르 선택
         danceability = target_features.get("danceability", 0.5)
         if danceability > 0.7:
-            dance_genres = ["dance", "electronic", "pop", "house", "disco"]
+            dance_genres = ["dance", "electronic", "pop", "house", "disco", "edm"]
         elif danceability > 0.4:
-            dance_genres = ["pop", "rock", "funk", "soul", "r&b"]
+            dance_genres = ["pop", "rock", "funk", "soul", "r&b", "indie"]
         else:
-            dance_genres = ["ballad", "acoustic", "folk", "jazz", "classical"]
+            dance_genres = [
+                "ballad",
+                "acoustic",
+                "folk",
+                "jazz",
+                "classical",
+                "ambient",
+            ]
 
         # Energy 기반 분위 선택
         energy = target_features.get("energy", 0.5)
         if energy > 0.7:
-            energy_moods = ["energetic", "upbeat", "powerful", "intense", "driving"]
+            energy_moods = [
+                "energetic",
+                "upbeat",
+                "powerful",
+                "intense",
+                "driving",
+                "explosive",
+            ]
         elif energy > 0.4:
-            energy_moods = ["moderate", "balanced", "steady", "smooth", "flowing"]
+            energy_moods = [
+                "moderate",
+                "balanced",
+                "steady",
+                "smooth",
+                "flowing",
+                "dynamic",
+            ]
         else:
-            energy_moods = ["calm", "peaceful", "gentle", "soft", "relaxing"]
+            energy_moods = ["calm", "peaceful", "gentle", "soft", "relaxing", "mellow"]
 
         # Valence 기반 감정 선택
         valence = target_features.get("valence", 0.5)
         if valence > 0.7:
-            valence_moods = ["happy", "joyful", "cheerful", "bright", "uplifting"]
+            valence_moods = [
+                "happy",
+                "joyful",
+                "cheerful",
+                "bright",
+                "uplifting",
+                "positive",
+            ]
         elif valence > 0.4:
-            valence_moods = ["neutral", "balanced", "moderate", "stable", "even"]
+            valence_moods = [
+                "neutral",
+                "balanced",
+                "moderate",
+                "stable",
+                "even",
+                "centered",
+            ]
         else:
-            valence_moods = ["melancholic", "sad", "emotional", "deep", "introspective"]
+            valence_moods = [
+                "melancholic",
+                "sad",
+                "emotional",
+                "deep",
+                "introspective",
+                "moody",
+            ]
 
         # Tempo 기반 템포 선택
         tempo = target_features.get("tempo", 120)
         if tempo > 140:
-            tempo_descriptors = ["fast", "upbeat", "energetic", "driving"]
+            tempo_descriptors = ["fast", "upbeat", "energetic", "driving", "bpm"]
         elif tempo > 100:
-            tempo_descriptors = ["moderate", "steady", "balanced", "flowing"]
+            tempo_descriptors = [
+                "moderate",
+                "steady",
+                "balanced",
+                "flowing",
+                "mid-tempo",
+            ]
         else:
-            tempo_descriptors = ["slow", "relaxed", "calm", "peaceful"]
+            tempo_descriptors = ["slow", "relaxed", "calm", "peaceful", "ballad"]
 
-        # 검색어 조합 생성
-        for _ in range(5):
+        # Acousticness 기반 음향 특성
+        acousticness = target_features.get("acousticness", 0.5)
+        if acousticness > 0.7:
+            acoustic_descriptors = ["acoustic", "unplugged", "organic", "natural"]
+        else:
+            acoustic_descriptors = ["electronic", "synthetic", "processed", "digital"]
+
+        # 검색어 조합 생성 (더 다양하고 정확한 검색어)
+        for _ in range(8):  # 더 많은 검색어 생성
             genre = random.choice(dance_genres)
             mood = random.choice(energy_moods + valence_moods)
             tempo_desc = random.choice(tempo_descriptors)
+            acoustic_desc = random.choice(acoustic_descriptors)
 
             patterns = [
                 f"{genre} {mood}",
@@ -286,6 +433,9 @@ class SpotifyService:
                 f"{tempo_desc} {genre}",
                 f"{genre} {tempo_desc} tempo",
                 f"{mood} {tempo_desc} music",
+                f"{acoustic_desc} {genre}",
+                f"{genre} {acoustic_desc}",
+                f"{mood} {acoustic_desc} {genre}",
             ]
             search_queries.append(random.choice(patterns))
 
