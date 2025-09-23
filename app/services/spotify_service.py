@@ -9,9 +9,10 @@ from app.core.config import settings
 class SpotifyService:
     """Spotify API 연동을 위한 서비스 클래스"""
 
-    def __init__(self):
+    def __init__(self, access_token: str = None):
         self.client_id = settings.SPOTIFY_CLIENT_ID
         self.client_secret = settings.SPOTIFY_CLIENT_SECRET
+        self.access_token = access_token
 
         print(f"Spotify API 설정 확인:")
         print(
@@ -23,25 +24,41 @@ class SpotifyService:
 
         if self.client_id and self.client_secret:
             try:
-                client_credentials_manager = SpotifyClientCredentials(
-                    client_id=self.client_id, client_secret=self.client_secret
-                )
-                self.sp = spotipy.Spotify(
-                    client_credentials_manager=client_credentials_manager
-                )
-                print("✅ Spotify API 연결 성공")
+                if self.access_token:
+                    # Authorization Code Flow (사용자 인증)
+                    self.sp = spotipy.Spotify(auth=self.access_token)
+                    print("✅ Spotify API 연결 성공 (사용자 인증)")
 
-                # 토큰 발급 테스트
-                try:
-                    token = client_credentials_manager.get_access_token()
-                    if isinstance(token, str):
-                        print(f"✅ 토큰 발급 성공: {token[:20]}...")
-                    else:
-                        print(f"✅ 토큰 발급 성공: {type(token)} 타입")
-                except Exception as token_error:
-                    print(f"❌ 토큰 발급 실패: {token_error}")
-                    self.sp = None
-                    return
+                    # 사용자 정보 테스트
+                    try:
+                        user_info = self.sp.current_user()
+                        print(f"✅ 사용자 인증 성공: {user_info['display_name']}")
+                    except Exception as user_error:
+                        print(f"❌ 사용자 인증 실패: {user_error}")
+                        self.sp = None
+                        return
+
+                else:
+                    # Client Credentials Flow (서버 인증)
+                    client_credentials_manager = SpotifyClientCredentials(
+                        client_id=self.client_id, client_secret=self.client_secret
+                    )
+                    self.sp = spotipy.Spotify(
+                        client_credentials_manager=client_credentials_manager
+                    )
+                    print("✅ Spotify API 연결 성공 (서버 인증)")
+
+                    # 토큰 발급 테스트
+                    try:
+                        token = client_credentials_manager.get_access_token()
+                        if isinstance(token, str):
+                            print(f"✅ 토큰 발급 성공: {token[:20]}...")
+                        else:
+                            print(f"✅ 토큰 발급 성공: {type(token)} 타입")
+                    except Exception as token_error:
+                        print(f"❌ 토큰 발급 실패: {token_error}")
+                        self.sp = None
+                        return
 
                 # 연결 테스트
                 test_result = self.sp.search(q="test", type="track", limit=1)
@@ -104,7 +121,7 @@ class SpotifyService:
 
     def get_audio_features(self, track_id: str) -> Dict[str, Any]:
         """
-        트랙의 오디오 특성 가져오기
+        트랙의 오디오 특성 가져오기 (Client Credentials Flow 제한 대응)
         """
         if not self.sp:
             print("❌ Spotify API가 설정되지 않음")
@@ -134,7 +151,65 @@ class SpotifyService:
             print(f"❌ Spotify 오디오 특성 가져오기 오류: {e}")
             print(f"오류 타입: {type(e)}")
             print(f"오류 상세: {str(e)}")
+
+            # 403 오류인 경우 Client Credentials Flow 제한으로 판단
+            if "403" in str(e):
+                print("⚠️ Client Credentials Flow로는 Audio Features 접근이 제한됩니다.")
+                print("💡 대안: 트랙 정보를 기반으로 추정된 Audio Features 생성")
+                return self._estimate_audio_features_from_track(track_id)
+
             return {}
+
+    def _estimate_audio_features_from_track(self, track_id: str) -> Dict[str, Any]:
+        """
+        트랙 정보를 기반으로 추정된 Audio Features 생성
+        """
+        try:
+            # 트랙 정보 가져오기
+            track_info = self.sp.track(track_id)
+            if not track_info:
+                return self._get_default_audio_features()
+
+            # 트랙 정보를 기반으로 추정
+            name = track_info.get("name", "").lower()
+            artists = [
+                artist.get("name", "").lower()
+                for artist in track_info.get("artists", [])
+            ]
+            popularity = track_info.get("popularity", 50)
+
+            # 장르 기반 추정
+            estimated_features = self._get_default_audio_features()
+
+            # 인기도 기반 조정
+            if popularity > 70:
+                estimated_features["danceability"] = 0.7
+                estimated_features["energy"] = 0.7
+                estimated_features["valence"] = 0.6
+            elif popularity > 40:
+                estimated_features["danceability"] = 0.5
+                estimated_features["energy"] = 0.5
+                estimated_features["valence"] = 0.5
+            else:
+                estimated_features["danceability"] = 0.3
+                estimated_features["energy"] = 0.3
+                estimated_features["valence"] = 0.4
+
+            # 트랙명 기반 조정
+            if any(word in name for word in ["dance", "party", "club", "beat"]):
+                estimated_features["danceability"] = 0.8
+                estimated_features["energy"] = 0.8
+            elif any(word in name for word in ["ballad", "slow", "calm", "peaceful"]):
+                estimated_features["danceability"] = 0.3
+                estimated_features["energy"] = 0.3
+                estimated_features["valence"] = 0.4
+
+            print(f"📊 추정된 Audio Features 생성: {track_info.get('name', 'Unknown')}")
+            return estimated_features
+
+        except Exception as e:
+            print(f"❌ 추정된 Audio Features 생성 실패: {e}")
+            return self._get_default_audio_features()
 
     def _get_default_audio_features(self) -> Dict[str, Any]:
         """

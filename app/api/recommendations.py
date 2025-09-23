@@ -23,12 +23,15 @@ from app.api.audio import analysis_sessions
 
 
 @router.post("/similar", response_model=RecommendationResponse)
-async def get_similar_recommendations(request: RecommendationRequest):
+async def get_similar_recommendations(
+    request: RecommendationRequest, access_token: str = None
+):
     """
     유사한 곡을 추천합니다.
 
     Args:
         request: 추천 요청 데이터
+        access_token: Spotify 사용자 액세스 토큰 (선택사항)
 
     Returns:
         추천 곡 리스트
@@ -38,8 +41,8 @@ async def get_similar_recommendations(request: RecommendationRequest):
             f"추천 요청 받음: session_id={request.session_id}, num_recommendations={request.num_recommendations}"
         )
 
-        # Spotify 서비스 인스턴스 생성
-        spotify_service = SpotifyService()
+        # Spotify 서비스 인스턴스 생성 (사용자 토큰이 있으면 사용)
+        spotify_service = SpotifyService(access_token=access_token)
 
         # 실제 분석된 오디오 특징 가져오기
         target_features = None
@@ -383,19 +386,20 @@ async def _get_error_recommendation(request: RecommendationRequest):
 
 
 @router.post("/search", response_model=SpotifySearchResponse)
-async def search_tracks(request: SpotifySearchRequest):
+async def search_tracks(request: SpotifySearchRequest, access_token: str = None):
     """
     Spotify에서 곡을 검색합니다.
 
     Args:
         request: 검색 요청 데이터
+        access_token: Spotify 사용자 액세스 토큰 (선택사항)
 
     Returns:
         검색 결과
     """
     try:
-        # Spotify 서비스 인스턴스 생성
-        spotify_service = SpotifyService()
+        # Spotify 서비스 인스턴스 생성 (사용자 토큰이 있으면 사용)
+        spotify_service = SpotifyService(access_token=access_token)
 
         # Spotify API가 설정되어 있으면 실제 검색 시도
         if spotify_service.sp:
