@@ -33,7 +33,8 @@ function App() {
   
   const handleSpotifyLogin = () => {
     // 백엔드의 Spotify 로그인 엔드포인트로 리다이렉트
-    window.location.href = `${process.env.REACT_APP_API_URL || 'https://web-production-7d56.up.railway.app'}/api/v1/spotify/login`;
+    const apiUrl = process.env.REACT_APP_API_URL || 'https://web-production-7d56.up.railway.app';
+    window.location.href = `${apiUrl}/api/v1/spotify/login`;
   };
   
   const handleSpotifyLogout = () => {
@@ -51,7 +52,8 @@ function App() {
     
     if (code) {
       // 백엔드로 인증 코드 전송
-      fetch(`${process.env.REACT_APP_API_URL || 'https://web-production-7d56.up.railway.app'}/api/v1/spotify/callback?code=${code}`)
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://web-production-7d56.up.railway.app';
+      fetch(`${apiUrl}/api/v1/spotify/callback?code=${code}`)
         .then(response => response.json())
         .then(data => {
           if (data.success) {

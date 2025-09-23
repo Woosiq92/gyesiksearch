@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     # Spotify API 설정
     SPOTIFY_CLIENT_ID: Optional[str] = None
     SPOTIFY_CLIENT_SECRET: Optional[str] = None
-    SPOTIFY_REDIRECT_URI: str = "http://127.0.0.1:3000/callback"
+    SPOTIFY_REDIRECT_URI: str = "https://gyesiksearch.netlify.app/callback"
 
     # OpenAI API 설정
     OPENAI_API_KEY: Optional[str] = None
