@@ -20,7 +20,7 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import HomeIcon from '@mui/icons-material/Home';
 
-function RecommendationsPage() {
+function RecommendationsPage({ spotifyToken }) {
   const location = useLocation();
   const navigate = useNavigate();
   const analysisResult = location.state?.analysisResult;
@@ -37,7 +37,12 @@ function RecommendationsPage() {
     setError(null);
     
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://web-production-7d56.up.railway.app'}/api/v1/recommendations/similar`, {
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://web-production-7d56.up.railway.app';
+      const url = spotifyToken 
+        ? `${apiUrl}/api/v1/recommendations/similar?access_token=${spotifyToken}`
+        : `${apiUrl}/api/v1/recommendations/similar`;
+        
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -60,7 +65,7 @@ function RecommendationsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [analysisResult, numRecommendations]);
+  }, [analysisResult, numRecommendations, spotifyToken]);
 
   useEffect(() => {
     if (analysisResult) {

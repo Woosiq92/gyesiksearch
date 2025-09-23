@@ -159,3 +159,45 @@ async def get_user_recently_played(token: str, limit: int = 20):
         raise HTTPException(
             status_code=500, detail=f"최근 재생 곡 가져오기 오류: {str(e)}"
         )
+
+
+@router.get("/search")
+async def search_tracks(q: str, limit: int = 10, access_token: str = None):
+    """Spotify 트랙 검색"""
+    try:
+        if access_token:
+            # 사용자 토큰으로 검색 (더 많은 결과)
+            sp = spotipy.Spotify(auth=access_token)
+        else:
+            # 기본 클라이언트 자격 증명으로 검색
+            sp = spotipy.Spotify(
+                client_credentials_manager=spotipy.oauth2.SpotifyClientCredentials(
+                    client_id=settings.SPOTIFY_CLIENT_ID,
+                    client_secret=settings.SPOTIFY_CLIENT_SECRET
+                )
+            )
+        
+        results = sp.search(q=q, type='track', limit=limit)
+        
+        tracks = []
+        for track in results['tracks']['items']:
+            track_info = {
+                "id": track["id"],
+                "name": track["name"],
+                "artists": [artist["name"] for artist in track["artists"]],
+                "album": {
+                    "name": track["album"]["name"],
+                    "images": track["album"]["images"],
+                },
+                "preview_url": track["preview_url"],
+                "external_urls": track["external_urls"],
+                "popularity": track["popularity"],
+            }
+            tracks.append(track_info)
+        
+        return {"tracks": tracks}
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Spotify 검색 오류: {str(e)}"
+        )

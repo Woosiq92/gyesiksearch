@@ -29,7 +29,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import HomeIcon from '@mui/icons-material/Home';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
 
-function AnalysisPage() {
+function AnalysisPage({ spotifyToken }) {
   const location = useLocation();
   const navigate = useNavigate();
   const inputType = location.state?.inputType || 'microphone';
@@ -321,7 +321,12 @@ function AnalysisPage() {
     if (!searchQuery.trim()) return;
     
     try {
-      const response = await fetch(`/api/v1/spotify/search?q=${encodeURIComponent(searchQuery)}&limit=10`);
+      const apiUrl = process.env.REACT_APP_API_URL || 'https://web-production-7d56.up.railway.app';
+      const url = spotifyToken 
+        ? `${apiUrl}/api/v1/spotify/search?q=${encodeURIComponent(searchQuery)}&limit=10&access_token=${spotifyToken}`
+        : `${apiUrl}/api/v1/spotify/search?q=${encodeURIComponent(searchQuery)}&limit=10`;
+        
+      const response = await fetch(url);
       const data = await response.json();
       setSearchResults(data.tracks || []);
     } catch (err) {

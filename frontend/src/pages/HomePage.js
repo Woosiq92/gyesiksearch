@@ -16,7 +16,7 @@ import MicIcon from '@mui/icons-material/Mic';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import SearchIcon from '@mui/icons-material/Search';
 
-function HomePage() {
+function HomePage({ spotifyToken }) {
   const navigate = useNavigate();
   const [selectedTab, setSelectedTab] = useState(0);
 
